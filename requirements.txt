@@ -1,0 +1,27 @@
+# ==============================================================================
+# BOSOL AI CAD Engine - Core Dependencies
+# ==============================================================================
+
+# Web Framework & API
+fastapi>=0.110.0
+uvicorn>=0.28.0
+pydantic>=2.7.0
+
+# Database (Dual-State: PostgreSQL 16 & SQLite Fallback)
+SQLAlchemy>=2.0.0
+psycopg2-binary>=2.9.9
+
+# Environment Configuration
+python-dotenv>=1.0.0
+
+# PDF & Computer Vision Processing (Local-First 0 VNĐ)
+pymupdf>=1.24.0
+pillow>=10.0.0
+
+# Cloud AI Rescue (Google Gemini API v2)
+google-genai>=2.0.0
+tenacity>=8.2.0
+requests>=2.31.0
+
+# Documentation & Report Generator (Print-Ready HTML/PDF)
+Markdown>=3.6

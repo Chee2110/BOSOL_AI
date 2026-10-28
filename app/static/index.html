@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOSOL AI - Trợ Lý Đọc Bản Vẽ Cơ Khí</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="chatgpt-layout">
+        <!-- SIDEBAR TRÁI (THEO PHONG CÁCH CHATGPT) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-sparkle">✨</div>
+                    <div class="brand-info">
+                        <span class="brand-name">BOSOL <strong>AI</strong></span>
+                        <span class="brand-tag">Copilot v2.8</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-new-drawing" id="btn-new-drawing">
+                    <span class="icon">+</span>
+                    <span>Bản Vẽ Mới</span>
+                </button>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- DANH MỤC BẢN VẼ MẪU NHÀ XƯỞNG -->
+                <div class="sidebar-section">
+                    <div class="section-title">BẢN VẼ MẪU NHÀ XƯỞNG (15 FILE)</div>
+                    <div class="sample-list" id="sample-list">
+                        <!-- Render động qua JS -->
+                    </div>
+                </div>
+
+                <!-- LỊCH SỬ BẢN VẼ GẦN ĐÂY -->
+                <div class="sidebar-section">
+                    <div class="section-title">LỊCH SỬ BÓC TÁCH</div>
+                    <div class="recent-list" id="recent-list">
+                        <!-- Render động qua JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHỈ SỐ HỆ THỐNG Ở ĐÁY SIDEBAR -->
+            <div class="sidebar-footer">
+                <div class="system-status-card">
+                    <div class="status-row">
+                        <span class="status-indicator online"></span>
+                        <span class="status-label" id="sys-db">SQLite 0 VNĐ</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-icon">⚡</span>
+                        <span class="status-label" id="sys-model">Gemini 3.5 Flash</span>
+                    </div>
+                    <!-- BUDGET GUARD MINI -->
+                    <div class="mini-budget">
+                        <div class="mini-budget-labels">
+                            <span>Budget Guard:</span>
+                            <span id="mini-budget-val">$0.00 / $2.00</span>
+                        </div>
+                        <div class="mini-progress-track">
+                            <div class="mini-progress-fill" id="mini-budget-fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN WORKSPACE -->
+        <div class="main-wrapper">
+            <!-- TOP NAVBAR -->
+            <header class="top-navbar">
+                <div class="nav-left">
+                    <button type="button" class="btn-icon sidebar-toggle" id="btn-toggle-sidebar" title="Ẩn/Hiện Sidebar" aria-label="Ẩn hoặc hiện thanh bên">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div class="breadcrumb" id="top-breadcrumb">
+                        <span class="crumb-app">BOSOL AI</span>
+                        <span class="crumb-separator">/</span>
+                        <span class="crumb-doc" id="top-filename">Trang Chủ</span>
+                    </div>
+                    <span class="badge-category" id="top-category-badge">CAD_VECTOR</span>
+                </div>
+
+                <div class="nav-right">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-viewer">
+                        <span>📐 Ẩn/Hiện Bản Vẽ</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-bulk-approve">
+                        <span>✓ Duyệt Nhanh 1-Chạm</span>
+                    </button>
+                    <button type="button" class="btn btn-erp-gate" id="btn-export-erp" disabled>
+                        <span>🔒 Xuất Dữ Liệu ERP</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- CONTAINER NỘI DUNG -->
+            <div class="content-body" id="content-body">
+                <!-- MÀN HÌNH CHÀO MỪNG PHONG CÁCH CHATGPT (KHI CHƯA CHỌN BẢN VẼ) -->
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-hero">
+                        <div class="hero-sparkle">✨</div>
+                        <h1 class="hero-title">Hôm nay bạn cần bóc tách bản vẽ cơ khí nào?</h1>
+                        <p class="hero-sub">Hệ thống AI tự động phân loại 4 nhánh, đọc Khung tên, Kích thước Ø/±/R và kiểm soát sai số trên Laptop xưởng (0 VNĐ).</p>
+                    </div>
+
+                    <!-- 4 THẺ GỢI Ý MẪU CHATGPT -->
+                    <div class="prompt-grid">
+                        <div class="prompt-card" data-sample="PDF_BANVE/1.3 BV LỐC VÒM T12.A HÙNG.pdf">
+                            <div class="card-icon">📐</div>
+                            <div class="card-text">
+                                <div class="card-title">Bản vẽ Lốc Vòm T12</div>
+                                <div class="card-desc">Bản vẽ thiết kế CAD vector gốc • PyMuPDF đọc trong 27.5ms</div>
+                            </div>
+                        </div>
+
+                        <div class="prompt-card" data-sample="PDF_BANVE/BV CỬA TQ 2026 A TUẤN ANH.pdf">
+                            <div class="card-icon">🚪</div>
+                            <div class="card-text">
+                                <div class="card-title">Bản vẽ Cửa Nhôm TQ</div>
+                                <div class="card-desc">Bóc tách toàn bộ mã hiệu và số đo chi tiết bản vẽ cửa</div>
+                            </div>
+                        </div>
+
+                        <div class="prompt-card" data-sample="PDF_SCAN_BAN_VE/Bản vẽ sản xuất.pdf">
+                            <div class="card-icon">📑</div>
+                            <div class="card-text">
+                                <div class="card-title">Bản vẽ Scan Sản Xuất</div>
+                                <div class="card-desc">Bản vẽ scan photo cũ mờ • Tự động kích hoạt Multi-OCR đa tầng</div>
+                            </div>
+                        </div>
+
+                        <div class="prompt-card" data-sample="PDF_TEXT/Don_hang_du_an_DA00015.pdf">
+                            <div class="card-icon">📋</div>
+                            <div class="card-text">
+                                <div class="card-title">Đơn hàng Dự Án DA00015</div>
+                                <div class="card-desc">Bóc tách danh sách vật tư bảng kê đơn hàng dạng PDF Text</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KHU VỰC KÉO THẢ TẢI TỆP -->
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="drop-icon">⬆</div>
+                        <div class="drop-title">Kéo thả tệp bản vẽ PDF vào đây</div>
+                        <div class="drop-sub">hoặc <span class="browse-link">chọn tệp từ máy tính</span> để bắt đầu bóc tách</div>
+                        <input type="file" id="file-input-welcome" accept=".pdf">
+                    </div>
+                </div>
+
+                <!-- KHU VỰC ĐỐI SOÁT KHI ĐÃ CÓ BẢN VẼ (DUAL-PANE 50/50 SÁNG SỦA) -->
+                <div class="workspace-dual" id="workspace-dual">
+                    <!-- CỘT TRÁI: DÒNG THỜI GIAN COPILOT & BẢNG BÓC TÁCH BOM -->
+                    <div class="pane-copilot" id="pane-copilot">
+                        <div class="conversation-stream" id="conversation-stream">
+                            <!-- Tin nhắn trợ lý bóc tách thành công -->
+                            <div class="chat-message assistant">
+                                <div class="avatar">🤖</div>
+                                <div class="message-content">
+                                    <div class="assistant-lead">
+                                        Đã bóc tách thành công bản vẽ <strong id="lead-filename">1.3 BV LỐC VÒM.pdf</strong>!
+                                    </div>
+
+                                    <!-- THẺ TỔNG QUAN KHUNG TÊN (TITLE BLOCK) -->
+                                    <div class="titleblock-card" id="titleblock-card">
+                                        <div class="tb-item">
+                                            <span class="tb-label">Tên bản vẽ:</span>
+                                            <span class="tb-value" id="tb-name">—</span>
+                                        </div>
+                                        <div class="tb-item">
+                                            <span class="tb-label">Vật liệu:</span>
+                                            <span class="tb-value" id="tb-material">—</span>
+                                        </div>
+                                        <div class="tb-item">
+                                            <span class="tb-label">Tỷ lệ:</span>
+                                            <span class="tb-value" id="tb-scale">—</span>
+                                        </div>
+                                        <div class="tb-item">
+                                            <span class="tb-label">Tiến độ duyệt:</span>
+                                            <span class="tb-value highlight" id="tb-progress">0/0 mục</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- BẢNG BÓC TÁCH CHI TIẾT BOM -->
+                                    <div class="bom-card">
+                                        <div class="bom-card-header">
+                                            <span class="bom-card-title">Danh Sách Kích Thước &amp; Thông Số Cơ Khí</span>
+                                            <span class="bom-card-hint">💡 Bấm vào từng dòng để xem vị trí trên bản vẽ bên phải</span>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="chatgpt-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="col-idx">#</th>
+                                                        <th class="col-category">Hạng Mục</th>
+                                                        <th class="col-extracted">AI Trích Xuất</th>
+                                                        <th class="col-evidence">Bằng Chứng</th>
+                                                        <th class="col-verified">Kỹ Sư Duyệt</th>
+                                                        <th class="col-status">Duyệt</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="bom-items-tbody">
+                                                    <!-- Render danh sách qua JS -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- KHUNG THÔNG BÁO HARD GATE -->
+                                    <div class="hardgate-notice" id="hardgate-notice">
+                                        <div class="notice-icon" id="notice-icon">🔒</div>
+                                        <div class="notice-body">
+                                            <div class="notice-title" id="notice-title">Khóa An Toàn 2 Lớp (Hard Gate ERP)</div>
+                                            <div class="notice-desc" id="notice-desc">Bạn cần phê duyệt tất cả các mục trước khi được phép xuất dữ liệu xuống xưởng CNC/ERP.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KHUNG NHẬP LIỆU CHAT COPILOT CHATGPT STYLE Ở ĐÁY -->
+                        <div class="chat-input-wrapper">
+                            <div class="chat-input-box">
+                                <input type="text" id="copilot-input" placeholder="Hỏi trợ lý AI về bản vẽ này (Ví dụ: Kích thước nào lớn nhất, vật liệu gì?)...">
+                                <button type="button" class="btn-send-chat" id="btn-send-chat" title="Gửi câu hỏi" aria-label="Gửi câu hỏi">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <line x1="12" y1="19" x2="12" y2="5"></line>
+                                        <polyline points="5 12 12 5 19 12"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="input-disclaimer">BOSOL AI tuân thủ nguyên tắc Zero Hallucination: Chỉ trả lời dựa trên số liệu thực tế của bản vẽ.</div>
+                        </div>
+                    </div>
+
+                    <!-- CỘT PHẢI: TRÌNH XEM BẢN VẼ TƯƠNG TÁC (CAD DRAWING VIEWER) -->
+                    <div class="pane-viewer" id="pane-viewer">
+                        <div class="viewer-toolbar-light">
+                            <div class="viewer-pages">
+                                <button type="button" class="btn-tool-light" id="btn-prev-page" aria-label="Trang trước">◀</button>
+                                <span id="page-num-display">1 / 1</span>
+                                <button type="button" class="btn-tool-light" id="btn-next-page" aria-label="Trang tiếp">▶</button>
+                            </div>
+
+                            <div class="viewer-zoom-controls">
+                                <button type="button" class="btn-tool-light" id="btn-zoom-out" aria-label="Thu nhỏ">➖</button>
+                                <span id="zoom-percent">100%</span>
+                                <button type="button" class="btn-tool-light" id="btn-zoom-in" aria-label="Phóng to">➕</button>
+                                <button type="button" class="btn-tool-light" id="btn-zoom-fit">Vừa Khít</button>
+                            </div>
+                        </div>
+
+                        <div class="canvas-scroll-area" id="canvas-scroll-area">
+                            <div class="paper-viewport" id="paper-viewport">
+                                <canvas id="pdf-render-canvas"></canvas>
+                                <div class="bbox-layer" id="bbox-layer"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL XEM ẢNH BẰNG CHỨNG WEBP -->
+    <div class="image-modal" id="image-modal">
+        <div class="image-modal-card">
+            <button type="button" class="btn-close-modal" id="btn-close-modal" aria-label="Đóng cửa sổ xem ảnh">&times;</button>
+            <div class="modal-card-header">
+                <span class="modal-card-title">ẢNH BẰNG CHỨNG CẬN CẢNH (EVIDENCE CROP)</span>
+                <span class="modal-card-sub" id="modal-sub-info"></span>
+            </div>
+            <div class="modal-card-body">
+                <img id="modal-crop-image" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" alt="Evidence Crop">
+            </div>
+        </div>
+    </div>
+
+    <!-- HỘP THÔNG BÁO TOAST -->
+    <div class="toast-stack" id="toast-stack"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
